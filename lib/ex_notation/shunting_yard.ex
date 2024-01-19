@@ -3,7 +3,14 @@ defmodule ExNotation.ShuntingYard do
   The Shunting Yard algorithm is used to convert an infix expression
   to postfix notation.
   """
-  @operators ["+", "-", "*", "/"]
+  @operators %{
+    "^" => 4,
+    "*" => 3,
+    "/" => 3,
+    "+" => 2,
+    "-" => 2,
+    "(" => 1
+  }
 
   @doc """
   Converts an infix expression to postfix notation.
@@ -32,7 +39,7 @@ defmodule ExNotation.ShuntingYard do
     {queue, stack}
   end
 
-  defp handle_token(operator, output_queue, op_stack) when operator in @operators do
+  defp handle_token(operator, output_queue, op_stack) when is_map_key(@operators, operator) do
     {queue, stack} = pop_higher_precedence_ops(output_queue, op_stack, operator)
     {queue, [operator | stack]}
   end
@@ -54,13 +61,9 @@ defmodule ExNotation.ShuntingYard do
     {Enum.reverse(ops) ++ queue, rest}
   end
 
-  defp op_prec("^"), do: 4
-  defp op_prec("*"), do: 3
-  defp op_prec("/"), do: 3
-  defp op_prec("+"), do: 2
-  defp op_prec("-"), do: 2
-  defp op_prec("("), do: 1
-  defp op_prec(_), do: 0
+  defp op_prec(op) do
+    @operators[op]
+  end
 
   defp flush_operators({queue, stack}) do
     Enum.reverse(stack) ++ queue
