@@ -112,7 +112,17 @@ defmodule ExNotation.Expression do
   end
 
   @doc """
-  Converts to postifx notation.
+  Converts to postifx notation. In the case that the expression is already
+  in postfix notation, it will return the expression as is.
+
+  ## Examples
+
+      iex> ExNotation.Expression.new("1 + 2") |> ExNotation.Expression.to_postfix().expression
+      "1 2 +"
+      iex> ExNotation.Expression.new("+ 1 2") |> ExNotation.Expression.to_postfix().expression
+      "1 2 +"
+      iex> ExNotation.Expression.new("1 2 +") |> ExNotation.Expression.to_postfix().expression
+      "1 2 +"
   """
   @spec to_postfix(t()) :: t()
   def to_postfix(%__MODULE__{notation: :postfix} = exp) do
