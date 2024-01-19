@@ -3,6 +3,32 @@ defmodule ExNotation.ExpressionTest do
 
   alias ExNotation.Expression
 
+  describe "new/1" do
+    test "with an infix expression" do
+      assert %Expression{
+               expression: "1 + 2",
+               tokens: ["1", "+", "2"],
+               notation: :infix
+             } = Expression.new("1 + 2")
+    end
+
+    test "with a prefix expression" do
+      assert %Expression{
+               expression: "+ 1 2",
+               tokens: ["+", "1", "2"],
+               notation: :prefix
+             } = Expression.new("+ 1 2")
+    end
+
+    test "with a postfix expression" do
+      assert %Expression{
+               expression: "1 2 +",
+               tokens: ["1", "2", "+"],
+               notation: :postfix
+             } = Expression.new("1 2 +")
+    end
+  end
+
   describe "tokenize/1" do
     test "tokenizes a string" do
       assert Expression.tokenize("(5 + x1) * y_2 - z") == [
@@ -81,6 +107,20 @@ defmodule ExNotation.ExpressionTest do
                tokens: ["1", "2", "+"],
                notation: :postfix
              }
+    end
+  end
+
+  describe "to_postfix/1" do
+    test "does not change a postfix expression" do
+      expression = Expression.new("1 2 +")
+
+      assert Expression.to_postfix(expression) == expression
+    end
+
+    test "converts an infix expression to postfix" do
+      infix = Expression.new("1 + 2")
+
+      assert Expression.to_postfix(infix) == Expression.new("1 2 +")
     end
   end
 end

@@ -6,6 +6,7 @@ defmodule ExNotation.Expression do
   - prefix
   - postfix
   """
+  alias ExNotation.{Notation, Parser, Tokeniser}
   defstruct [:notation, :expression, tokens: []]
 
   @type t :: %__MODULE__{
@@ -13,6 +14,18 @@ defmodule ExNotation.Expression do
           expression: String.t(),
           tokens: list(String.t())
         }
+
+  @doc """
+  Creates a new expression by automatically detecting the notation
+  and tokenising the expression.
+  """
+  @spec new(String.t()) :: t()
+  def new(expression) do
+    notation = Notation.detect(expression)
+
+    %__MODULE__{notation: notation, expression: expression}
+    |> tokenize()
+  end
 
   @doc """
   Tokenizes a string.
@@ -28,21 +41,15 @@ defmodule ExNotation.Expression do
   """
   @spec tokenize(String.t() | t()) :: list(String.t()) | t()
   def tokenize(expression) when is_binary(expression) do
-    expression
-    |> String.trim()
-    |> String.split(~r/\s+/)
-    |> Enum.flat_map(
-      &String.split(
-        &1,
-        ~r/(\+|-|\*|\/|\(|\))/,
-        include_captures: true,
-        trim: true
-      )
-    )
+    Tokeniser.tokenise(expression)
   end
 
-  def tokenize(%__MODULE__{expression: expression} = exp) do
+  def tokenize(%__MODULE__{expression: expression, tokens: []} = exp) do
     %{exp | tokens: tokenize(expression)}
+  end
+
+  def tokenize(%__MODULE__{} = exp) do
+    exp
   end
 
   @doc """
@@ -59,38 +66,7 @@ defmodule ExNotation.Expression do
   """
   @spec detect_notation(String.t()) :: atom()
   def detect_notation(expression) do
-    case last_two_tokens(expression) do
-      [second_last, last] -> determine_notation(second_last, last)
-      [_value] -> :infix
-    end
-  end
-
-  defp last_two_tokens(expression) do
-    expression
-    |> tokenize()
-    |> Enum.take(-2)
-  end
-
-  defp determine_notation(second_last, last) do
-    cond do
-      bracket?(last) -> :infix
-      operator?(second_last) && value?(last) -> :infix
-      operator?(last) -> :postfix
-      value?(last) && value?(second_last) -> :prefix
-      true -> raise "Unknown notation"
-    end
-  end
-
-  defp operator?(token) do
-    token in ["+", "-", "*", "/"]
-  end
-
-  defp bracket?(token) do
-    token in ["(", ")"]
-  end
-
-  defp value?(token) do
-    !operator?(token) && !bracket?(token)
+    Notation.detect(expression)
   end
 
   @doc """
@@ -133,5 +109,19 @@ defmodule ExNotation.Expression do
   def postfix(expression) do
     %__MODULE__{notation: :postfix, expression: expression}
     |> tokenize()
+  end
+
+  @doc """
+  Converts to postifx notation.
+  """
+  @spec to_postfix(t()) :: t()
+  def to_postfix(%__MODULE__{notation: :postfix} = exp) do
+    exp
+  end
+
+  def to_postfix(%__MODULE__{notation: :infix, expression: expression}) do
+    expression
+    |> Parser.infix_to_postfix()
+    |> postfix()
   end
 end
