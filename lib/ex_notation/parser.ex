@@ -47,7 +47,7 @@ defmodule ExNotation.Parser do
 
   defp handle_token(token, stack) when token in @operators do
     [right_op, left_op | rest] = stack
-    [{token, {left_op, right_op}} | rest]
+    [{token, [left_op, right_op]} | rest]
   end
 
   defp handle_token(token, stack),
